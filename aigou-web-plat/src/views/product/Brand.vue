@@ -4,10 +4,10 @@
 		<el-col :span="24" class="toolbar" style="padding-bottom: 0px;">
 			<el-form :inline="true" :model="filters">
 				<el-form-item>
-					<el-input v-model="filters.name" placeholder="姓名"></el-input>
+					<el-input v-model="filters.keyword" placeholder="关键字"></el-input>
 				</el-form-item>
 				<el-form-item>
-					<el-button type="primary" v-on:click="getUsers">查询</el-button>
+					<el-button type="primary" v-on:click="getBrands">查询</el-button>
 				</el-form-item>
 				<el-form-item>
 					<el-button type="primary" @click="handleAdd">新增</el-button>
@@ -16,20 +16,20 @@
 		</el-col>
 
 		<!--列表-->
-		<el-table :data="users" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">
+		<el-table :data="brands" highlight-current-row v-loading="listLoading" @selection-change="selsChange" style="width: 100%;">
 			<el-table-column type="selection" width="55">
 			</el-table-column>
 			<el-table-column type="index" width="60">
 			</el-table-column>
-			<el-table-column prop="name" label="姓名" width="120" sortable>
+			<el-table-column prop="name" label="品牌名称" width="150" sortable>
 			</el-table-column>
-			<el-table-column prop="sex" label="性别" width="100" :formatter="formatSex" sortable>
+			<el-table-column prop="englishName" label="英文名称" width="150" :formatter="formatSex" sortable>
 			</el-table-column>
-			<el-table-column prop="age" label="年龄" width="100" sortable>
+			<el-table-column prop="logo" label="logo" width="150" sortable>
 			</el-table-column>
-			<el-table-column prop="birth" label="生日" width="120" sortable>
+			<el-table-column prop="productType.name" label="类型" width="150" sortable>
 			</el-table-column>
-			<el-table-column prop="addr" label="地址" min-width="180" sortable>
+			<el-table-column prop="description" label="描述" min-width="150" sortable>
 			</el-table-column>
 			<el-table-column label="操作" width="150">
 				<template scope="scope">
@@ -42,7 +42,7 @@
 		<!--工具条-->
 		<el-col :span="24" class="toolbar">
 			<el-button type="danger" @click="batchRemove" :disabled="this.sels.length===0">批量删除</el-button>
-			<el-pagination layout="prev, pager, next" @current-change="handleCurrentChange" :page-size="20" :total="total" style="float:right;">
+			<el-pagination layout="prev, pager, next" @current-change="handleCurrentChange" :page-size="pageSize" :total="total" style="float:right;">
 			</el-pagination>
 		</el-col>
 
@@ -75,25 +75,20 @@
 		</el-dialog>
 
 		<!--新增界面-->
-		<el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false">
+		<el-dialog title="新增" v-model="addFormVisible" :close-on-click-modal="false" size="tiny">
 			<el-form :model="addForm" label-width="80px" :rules="addFormRules" ref="addForm">
-				<el-form-item label="姓名" prop="name">
+				<!--label 表单组件的信息  prop  验证使用-->
+				<el-form-item label="品牌名称" prop="name">
 					<el-input v-model="addForm.name" auto-complete="off"></el-input>
 				</el-form-item>
-				<el-form-item label="性别">
-					<el-radio-group v-model="addForm.sex">
-						<el-radio class="radio" :label="1">男</el-radio>
-						<el-radio class="radio" :label="0">女</el-radio>
-					</el-radio-group>
+				<el-form-item label="英文名称" prop="englishName">
+					<el-input v-model="addForm.englishName" auto-complete="off"></el-input>
 				</el-form-item>
-				<el-form-item label="年龄">
-					<el-input-number v-model="addForm.age" :min="0" :max="200"></el-input-number>
+				<el-form-item label="类型" prop="productTypeId">
+					<el-input v-model="addForm.productTypeId" auto-complete="off"></el-input>
 				</el-form-item>
-				<el-form-item label="生日">
-					<el-date-picker type="date" placeholder="选择日期" v-model="addForm.birth"></el-date-picker>
-				</el-form-item>
-				<el-form-item label="地址">
-					<el-input type="textarea" v-model="addForm.addr"></el-input>
+				<el-form-item label="描述">
+					<el-input type="textarea" v-model="addForm.description"></el-input>
 				</el-form-item>
 			</el-form>
 			<div slot="footer" class="dialog-footer">
@@ -113,9 +108,10 @@
 		data() {
 			return {
 				filters: {
-					name: ''
+					keyword: ''
 				},
-				users: [],
+				pageSize:10,
+				brands: [],
 				total: 0,
 				page: 1,
 				listLoading: false,
@@ -157,28 +153,27 @@
 			}
 		},
 		methods: {
-			//性别显示转换
+		/*	//性别显示转换
 			formatSex: function (row, column) {
 				return row.sex == 1 ? '男' : row.sex == 0 ? '女' : '未知';
-			},
+			},*/
 			handleCurrentChange(val) {
 				this.page = val;
-				this.getUsers();
+				this.getBrands();
 			},
 			//获取用户列表
-			getUsers() {
-				let para = {
-					page: this.page,
-					name: this.filters.name
-				};
+			getBrands() {
 				this.listLoading = true;
-				//NProgress.start();
-				getUserListPage(para).then((res) => {
-					this.total = res.data.total;
-					this.users = res.data.users;
-					this.listLoading = false;
-					//NProgress.done();
-				});
+				this.$http.post("/product/brand/json",{
+				    pageNum:this.page,
+					pageSize:this.pageSize,
+					keyword:this.filters.keyword
+				}).then(res=>{
+                    this.listLoading = false;
+				    let pagelist =res.data;
+				    this.brands=pagelist.rows;
+				    this.total=pagelist.total;
+				})
 			},
 			//删除
 			handleDel: function (index, row) {
@@ -186,37 +181,52 @@
 					type: 'warning'
 				}).then(() => {
 					this.listLoading = true;
-					//NProgress.start();
-					let para = { id: row.id };
-					removeUser(para).then((res) => {
+					this.$http.delete("/product/brand/delete/"+row.id)
+						.then((res)=>{
+                            this.listLoading = false;
+                            if(res.data.success){
+                                this.$message({
+                                    message: '删除成功',
+                                    type: 'success'
+                                });
+
+                                this.getBrands();
+							}else {
+                                this.$message({
+                                    message: res.data.message,
+                                    type: 'error'
+                                });
+							}
+						})
+					/*removeUser(para).then((res) => {
 						this.listLoading = false;
 						//NProgress.done();
 						this.$message({
 							message: '删除成功',
 							type: 'success'
 						});
-						this.getUsers();
-					});
-				}).catch(() => {
-
-				});
+						this.getBrands();
+					});*/
+				})
 			},
 			//显示编辑界面
 			handleEdit: function (index, row) {
 				this.editFormVisible = true;
 				this.editForm = Object.assign({}, row);
 			},
+
+
+
 			//显示新增界面
-			handleAdd: function () {
-				this.addFormVisible = true;
-				this.addForm = {
-					name: '',
-					sex: -1,
-					age: 0,
-					birth: '',
-					addr: ''
-				};
-			},
+            handleAdd: function () {
+                this.addFormVisible = true;
+                this.addForm = {
+                    name: '',
+                    englishName:'',
+                    productTypeId:null,
+                    description:''
+                };
+            },
 			//编辑
 			editSubmit: function () {
 				this.$refs.editForm.validate((valid) => {
@@ -235,7 +245,7 @@
 								});
 								this.$refs['editForm'].resetFields();
 								this.editFormVisible = false;
-								this.getUsers();
+								this.getBrands();
 							});
 						});
 					}
@@ -249,18 +259,25 @@
 							this.addLoading = true;
 							//NProgress.start();
 							let para = Object.assign({}, this.addForm);
-							para.birth = (!para.birth || para.birth == '') ? '' : util.formatDate.format(new Date(para.birth), 'yyyy-MM-dd');
-							addUser(para).then((res) => {
-								this.addLoading = false;
-								//NProgress.done();
-								this.$message({
-									message: '提交成功',
-									type: 'success'
-								});
-								this.$refs['addForm'].resetFields();
-								this.addFormVisible = false;
-								this.getUsers();
-							});
+                            this.$http.post("/product/brand/add",para)
+                                .then(res=>{
+                                    this.addLoading = false;
+                                    let data = res.data;
+                                    if(data.success){
+                                        this.$message({
+                                            message: '提交成功',
+                                            type: 'success'
+                                        });
+                                        this.$refs['addForm'].resetFields();//清空表单
+                                        this.addFormVisible = false;//关闭模态框
+                                        this.getBrands();//重新加载表格数据
+                                    }else{
+                                        this.$message({
+                                            message: data.message,
+                                            type: 'error'
+                                        });
+                                    }
+                                })
 						});
 					}
 				});
@@ -284,15 +301,16 @@
 							message: '删除成功',
 							type: 'success'
 						});
-						this.getUsers();
+						this.getBrands();
 					});
 				}).catch(() => {
 
 				});
 			}
 		},
+		//在页面加载之后执行
 		mounted() {
-			this.getUsers();
+			this.getBrands();
 		}
 	}
 
