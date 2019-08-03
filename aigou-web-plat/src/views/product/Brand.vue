@@ -85,7 +85,15 @@
 					<el-input v-model="addForm.englishName" auto-complete="off"></el-input>
 				</el-form-item>
 				<el-form-item label="类型" prop="productTypeId">
-					<el-input v-model="addForm.productTypeId" auto-complete="off"></el-input>
+					<!--<el-input v-model="addForm.productTypeId" auto-complete="off"></el-input>-->
+					<div class="block">
+						<el-cascader
+								v-model="addForm.productTypeId"
+                                :props="props"
+								:options="productTypes">
+						</el-cascader>
+					</div>
+
 				</el-form-item>
 				<el-form-item label="描述">
 					<el-input type="textarea" v-model="addForm.description"></el-input>
@@ -101,7 +109,6 @@
 
 <script>
 	import util from '../../common/js/util'
-	//import NProgress from 'nprogress'
 	import { getUserListPage, removeUser, batchRemoveUser, editUser, addUser } from '../../api/api';
 
 	export default {
@@ -110,6 +117,11 @@
 				filters: {
 					keyword: ''
 				},
+                productTypes:[],
+                props:{
+                    label:"name",
+                    value:"id"
+                },
 				pageSize:10,
 				brands: [],
 				total: 0,
@@ -144,6 +156,7 @@
 				//新增界面数据
 				addForm: {
 					name: '',
+                    productTypeId:null,
 					sex: -1,
 					age: 0,
 					birth: '',
@@ -153,10 +166,12 @@
 			}
 		},
 		methods: {
-		/*	//性别显示转换
-			formatSex: function (row, column) {
-				return row.sex == 1 ? '男' : row.sex == 0 ? '女' : '未知';
-			},*/
+
+            loadProductTypes(){
+             this.$http.get("/product/productType/list").then((res)=>
+                 this.productTypes=res.data
+             )
+            },
 			handleCurrentChange(val) {
 				this.page = val;
 				this.getBrands();
@@ -311,6 +326,7 @@
 		//在页面加载之后执行
 		mounted() {
 			this.getBrands();
+			this.loadProductTypes();
 		}
 	}
 
